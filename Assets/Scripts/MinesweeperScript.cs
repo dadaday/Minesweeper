@@ -29,6 +29,9 @@ public class MinesweeperScript : MonoBehaviour {
 	private bool[,] isFlagged;
 	private bool[,] isOpened;
 
+	private float lastUpdate = 0.0f;
+	public float timeBetweenUpdates = 1.0f;
+
 	private void drawTable(int num) {
 
 		cellPrefab.transform.localScale = new Vector3(cellWidth, 0.1f, cellWidth);
@@ -49,10 +52,22 @@ public class MinesweeperScript : MonoBehaviour {
 
 		reset ();
 	}
+
+	private void updateTimer() {
+		int time = int.Parse(timerCounter.text);
+		timerCounter.text = (time + 1).ToString ();
+	}
 	
 	// Update is called once per frame
 	void Update () {
 		if (!finished) {
+			
+			lastUpdate += Time.deltaTime;
+			if (lastUpdate > timeBetweenUpdates) {
+				updateTimer ();
+				lastUpdate = 0.0f;
+			}
+
 			if (Input.GetMouseButtonDown (0)) {
 				RaycastHit hitInfo = new RaycastHit ();
 
@@ -129,6 +144,7 @@ public class MinesweeperScript : MonoBehaviour {
 	}
 
 	public void reset() {
+		timerCounter.text = 0.ToString ();
 		mineCountText.text = MINES.ToString ();
 		DIM = NUM * NUM;
 		isFlagged = new bool[NUM, NUM];
