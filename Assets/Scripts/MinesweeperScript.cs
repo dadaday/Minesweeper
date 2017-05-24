@@ -12,10 +12,14 @@ public class MinesweeperScript : MonoBehaviour {
 	public GameObject mineCellPrefab;
 	public RawImage smileImage;
 	public Texture[] textures;
+	public Texture[] mineCountTextures;
 
 	private float cellWidth = 1.0f;
 	private int DIM;
 	private bool finished;
+
+	private int openedTiles;
+	private bool victory;
 
 	private GameObject[,] cells;
 	private Vector3 clickedCoord;
@@ -34,7 +38,6 @@ public class MinesweeperScript : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		DIM = NUM * NUM;
 		cells = new GameObject[NUM, NUM];
 
 		reset ();
@@ -53,14 +56,29 @@ public class MinesweeperScript : MonoBehaviour {
 					clickedCoord = selectedGO.GetComponent<Transform> ().position;
 					int x = (int)clickedCoord.x;
 					int z = (int)clickedCoord.z;
-					Debug.Log ("x: " + x + " z: " + z);
-					Destroy (cells [x, z]);
-					if (field.isTileBomb (x, z)) {
-						kaboom (x, z);
+
+					if (field.getStateOf (x, z) == Field.STATE.NOTVISITED) {
+						if (field.isTileBomb (x, z)) {
+							kaboom (x, z);
+						}
 					}
 				}
 			} 
 
+		}
+	}
+
+	public void openTile(int x, int z, int minesAround) {
+		openedTiles++;
+		Debug.Log ("OPENED: " + openedTiles);
+		cells [x, z].gameObject.GetComponent<MeshRenderer>().materials[0].SetTexture("_MainTex", mineCountTextures[minesAround]);
+
+		if ((DIM - openedTiles) == MINES) {
+			victory = true;
+			finished = true;
+			smileImage.texture = textures [1];
+			Debug.Log ("DIM: " + DIM + " opened: " + openedTiles);
+			Debug.Log ("Since " + (DIM - openedTiles) + " == " + MINES);
 		}
 	}
 
@@ -71,15 +89,20 @@ public class MinesweeperScript : MonoBehaviour {
 	}
 
 	public void reset() {
+		DIM = NUM * NUM;
+
 		smileImage.texture = textures [0];
 
 		foreach (GameObject cell in cells) {
 			Destroy (cell);
 		}
 
-		field = new Field (NUM, MINES);
+		field = new Field (NUM, MINES, this);
 		finished = false;
 		drawTable (NUM);
+
+		openedTiles = 0;
+		victory = false;
 	}
 
 	public void ExitApplication() {
